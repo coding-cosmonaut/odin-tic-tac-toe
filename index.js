@@ -23,15 +23,17 @@ const gameController = (function () {
     let divIdx = clickedDiv.getAttribute("data-idx");
     if (playerX.turn) {
       ticTacBoard.setArray(playerX.marker, divIdx);
-      checkWinner();
       playerX.turn = !playerX.turn;
       playerO.turn = !playerO.turn;
+      renderingToDOM.updatePlayerTurn();
+      checkWinner();
       return playerX.marker;
     } else {
       ticTacBoard.setArray(playerO.marker, divIdx);
-      checkWinner();
       playerO.turn = !playerO.turn;
       playerX.turn = !playerX.turn;
+      renderingToDOM.updatePlayerTurn();
+      checkWinner();
       return playerO.marker;
     }
   }
@@ -59,20 +61,14 @@ const gameController = (function () {
       checkIdx([0, 4, 8]) ||
       checkIdx([2, 4, 6])
     ) {
-      console.log("WIN??");
       renderingToDOM.playerDiv.textContent = `${
-        playerX.turn ? "Player X Won!" : "Player O Won!"
+        playerX.turn ? "Player O Won!" : "Player X Won!"
       }`;
       renderingToDOM.endGame();
-      
-      console.log(ticTacBoard.getArray());
     } else if (
       curBoard.every((cell) => cell === "X" || (cell === "O" && cell !== null))
     ) {
-      console.log("draw??");
-      console.log(ticTacBoard.getArray());
-    } else {
-      console.log("playing");
+      renderingToDOM.playerDiv.textContent = "It's a tie!";
     }
   }
 
@@ -92,17 +88,23 @@ const renderingToDOM = (function (playerX, playerO) {
   }
 
   function restartGame() {
-    console.log("clicked");
     let getArray = ticTacBoard.getArray();
     for (let i = 0; i < getArray.length; i++) {
       gridItems[i].textContent = "";
       gridItems[i].addEventListener("click", render);
+      gridItems[i].classList.remove("grid-item-clicked");
       if (getArray[i] !== null) {
         ticTacBoard.setArray(null, i);
       }
     }
     playerO.turn = false;
     playerX.turn = true;
+
+    updatePlayerTurn();
+  }
+
+  function updatePlayerTurn() {
+    playerDiv.textContent = `Player ${playerX.turn ? "X" : "O"}'s turn!`;
   }
 
   function render() {
@@ -110,12 +112,13 @@ const renderingToDOM = (function (playerX, playerO) {
       return;
     } else {
       this.textContent = gameController.takeTurns(this);
-      playerDiv.textContent = `Player ${playerX.turn ? "X" : "O"}'s turn!`;
+      this.classList.add("grid-item-clicked");
     }
   }
   return {
     playerDiv,
     endGame,
     restartBttn,
+    updatePlayerTurn,
   };
 })(gameController.playerX, gameController.playerO);
