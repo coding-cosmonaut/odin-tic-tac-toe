@@ -18,34 +18,21 @@ const players = function (name, marker, turn) {
 const gameController = (function () {
   const playerX = players("X", "X", true);
   const playerO = players("O", "O", false);
-  
-  function takeTurns() {
-    if (ticTacBoard.getArray().every((item) => item === null)) {
-      ticTacBoard.setArray(
-        playerX.marker,
-        Math.floor(Math.random() * ticTacBoard.getArray().length)
-      );
 
+  function takeTurns(clickedDiv) {
+    let divIdx = clickedDiv.getAttribute("data-idx");
+    if (playerX.turn) {
+      ticTacBoard.setArray(playerX.marker, divIdx);
+      checkWinner();
       playerX.turn = !playerX.turn;
       playerO.turn = !playerO.turn;
+      return playerX.marker;
     } else {
-      if (playerX.turn) {
-        checkWinner();
-        ticTacBoard.setArray(
-          playerX.marker,
-          Math.floor(Math.random() * ticTacBoard.getArray().length)
-        );
-        playerX.turn = !playerX.turn;
-        playerO.turn = !playerO.turn;
-      } else {
-        checkWinner();
-        ticTacBoard.setArray(
-          playerO.marker,
-          Math.floor(Math.random() * ticTacBoard.getArray().length)
-        );
-        playerO.turn = !playerO.turn;
-        playerX.turn = !playerX.turn;
-      }
+      ticTacBoard.setArray(playerO.marker, divIdx);
+      checkWinner();
+      playerO.turn = !playerO.turn;
+      playerX.turn = !playerX.turn;
+      return playerO.marker;
     }
   }
 
@@ -73,6 +60,11 @@ const gameController = (function () {
       checkIdx([2, 4, 6])
     ) {
       console.log("WIN??");
+      renderingToDOM.playerDiv.textContent = `${
+        playerX.turn ? "Player X Won!" : "Player O Won!"
+      }`;
+      renderingToDOM.endGame();
+      
       console.log(ticTacBoard.getArray());
     } else if (
       curBoard.every((cell) => cell === "X" || (cell === "O" && cell !== null))
@@ -84,5 +76,46 @@ const gameController = (function () {
     }
   }
 
-  return { checkWinner, takeTurns };
+  return { checkWinner, takeTurns, playerX, playerO };
 })();
+
+const renderingToDOM = (function (playerX, playerO) {
+  const gridItems = document.querySelectorAll(".grid-item");
+  const playerDiv = document.querySelector(".players");
+  const restartBttn = document.querySelector(".restart-bttn");
+
+  gridItems.forEach((gridItem) => gridItem.addEventListener("click", render));
+  restartBttn.addEventListener("click", restartGame);
+
+  function endGame() {
+    gridItems.forEach((item) => item.removeEventListener("click", render));
+  }
+
+  function restartGame() {
+    console.log("clicked");
+    let getArray = ticTacBoard.getArray();
+    for (let i = 0; i < getArray.length; i++) {
+      gridItems[i].textContent = "";
+      gridItems[i].addEventListener("click", render);
+      if (getArray[i] !== null) {
+        ticTacBoard.setArray(null, i);
+      }
+    }
+    playerO.turn = false;
+    playerX.turn = true;
+  }
+
+  function render() {
+    if (this.textContent === "X" || this.textContent === "O") {
+      return;
+    } else {
+      this.textContent = gameController.takeTurns(this);
+      playerDiv.textContent = `Player ${playerX.turn ? "X" : "O"}'s turn!`;
+    }
+  }
+  return {
+    playerDiv,
+    endGame,
+    restartBttn,
+  };
+})(gameController.playerX, gameController.playerO);
